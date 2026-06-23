@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: wikigame-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wiki_game
+      POSTGRES_USER: wiki_game_user
+      POSTGRES_PASSWORD: strong_password_123
+    ports:
+      - "55432:5432"
+    volumes:
+      - /volume1/docker/postgres-wikigame/data:/var/lib/postgresql/18/docker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wiki_game_user -d wiki_game"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  importer:
+    build:
+      context: /volume1/docker/wiki-game/app
+      dockerfile: Dockerfile
+    container_name: wikigame-importer
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      WIKIGAME_DB_HOST: postgres
+      WIKIGAME_DB_PORT: 5432
+      WIKIGAME_DB_NAME: wiki_game
+      WIKIGAME_DB_USER: wiki_game_user
+      WIKIGAME_DB_PASSWORD: strong_password_123
+    volumes:
+      - /volume1/docker/postgres-wikigame/raw:/data/raw:ro
+      - /volume1/docker/postgres-wikigame/work:/data/work
+    command:
+      - python
+      - -m
+      - wikigame.import_cli
+      - --page-dump
+      - /data/raw/ruwiki-latest-page.sql.gz
+      - --pagelinks-dump
+      - /data/raw/ruwiki-latest-pagelinks.sql.gz
+      - --truncate
+    restart: "no"
