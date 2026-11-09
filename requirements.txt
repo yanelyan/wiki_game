@@ -1,4 +1,0 @@
-aiogram
-python-dotenv
-requests
-psycopg[binary]

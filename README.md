@@ -1,67 +1,44 @@
-## Offline PostgreSQL mode
+# Wiki Game
 
-### Install dependencies
+Консольный проект на Go для поиска кратчайшего пути между двумя статьями Википедии.
 
-```bash
-pip install -r requirements.txt
+Планируемый ввод — две ссылки на статьи. Вывод — последовательность переходов
+по внутренним ссылкам от начальной статьи к конечной.
+
+Граф будет строиться из дампов Википедии и хранить исходящие и входящие связи.
+Для поиска планируется двусторонний BFS: от начала по исходящим рёбрам,
+от цели по входящим. Проект рассчитан на локальный запуск на ПК с 64 ГБ RAM;
+фактическое потребление памяти предстоит измерить.
+
+## Структура
+
+```text
+cmd/
+internal/
+pkg/
+README.md
+go.mod
+go.sum
 ```
 
-### Environment variables
+- `cmd/` — будущие точки входа консольных команд.
+- `internal/` — внутренняя логика импорта, графа и поиска.
+- `pkg/` — пакеты, которые при необходимости можно использовать вне проекта.
 
-```bash
-export WIKIGAME_DB_HOST=192.168.1.10
-export WIKIGAME_DB_PORT=5432
-export WIKIGAME_DB_NAME=wiki_game
-export WIKIGAME_DB_USER=wiki_game_user
-export WIKIGAME_DB_PASSWORD=strong_password_123
-```
+Сейчас создан только каркас: код импорта, поиска и консольного интерфейса
+ещё не реализован. Файлы `.gitkeep` сохраняют пустые каталоги в Git.
+Внешних зависимостей нет, поэтому `go.sum` пуст.
 
-### Import Wikimedia dumps
+Модуль: `github.com/yanelyan/wiki_game`. Минимальная версия в `go.mod` — Go 1.22.0.
 
-```bash
-python -m wikigame.import_cli \
-  --page-dump /path/to/ruwiki-latest-page.sql.gz \
-  --pagelinks-dump /path/to/ruwiki-latest-pagelinks.sql.gz \
-  --truncate
-```
+## Данные
 
-### Run offline search
+Для графа нужны согласованные SQL-дампы одной языковой версии Википедии
+из одного выпуска: `page`, `pagelinks` и `linktarget`.
+Для обработки перенаправлений понадобится `redirect`.
 
-```bash
-python -m wikigame.offline_cli \
-  --start "Москва" \
-  --goal "Санкт-Петербург"
-```
+В схеме с `pl_target_id` ссылки ведут в таблицу `linktarget`;
+это поле нельзя напрямую считать `page_id`.
+См. [схему pagelinks](https://www.mediawiki.org/wiki/Manual:Pagelinks_table).
 
-### Interactive smoke test
-
-```bash
-python -m wikigame.interactive_test
-```
-
-## NAS project mode
-
-For Synology NAS, the more reliable setup is:
-
-- store the app code on NAS
-- store Wikimedia dumps on NAS
-- run PostgreSQL and the importer on NAS
-
-Files added for this flow:
-
-- `Dockerfile`
-- `docker-compose.nas.yml`
-
-Expected NAS folders:
-
-- `/volume1/docker/postgres-wikigame/data`
-- `/volume1/docker/postgres-wikigame/raw`
-- `/volume1/docker/postgres-wikigame/work`
-- `/volume1/docker/wiki-game/app`
-
-Suggested deploy flow:
-
-1. Copy this repository to `/volume1/docker/wiki-game/app`
-2. Copy `docker-compose.nas.yml` into your Synology project folder as `docker-compose.yml`
-3. Start the project in Container Manager
-4. Run the `importer` service to load the dumps into PostgreSQL
+Дампы и построенный граф следует хранить вне репозитория.
