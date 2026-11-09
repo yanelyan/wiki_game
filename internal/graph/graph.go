@@ -1,5 +1,7 @@
 package graph
 
+import "errors"
+
 type Graph struct {
 	Titles []string
 
@@ -7,10 +9,18 @@ type Graph struct {
 	outgoing [][]uint32
 }
 
-func (g *Graph) OutNeighbors(v uint32) []uint32 {
-	return g.outgoing[v]
+var ErrGraphNotExist = errors.New("graph does not exist")
+
+func (g *Graph) OutNeighbors(v uint32) ([]uint32, error) {
+	if g == nil {
+		return nil, ErrGraphNotExist
+	}
+	return g.outgoing[v], nil
 }
 
-func (g *Graph) InNeighbors(v uint32) []uint32 {
-	return g.incoming[v]
+func (g *Graph) InNeighbors(v uint32) ([]uint32, error) {
+	if g == nil {
+		return nil, ErrGraphNotExist
+	}
+	return g.incoming[v], nil
 }
