@@ -23,6 +23,10 @@ func BuildTestGraph() error{
 		return fmt.Errorf("ошибка с преобразование json %w", err)
 	}
 
+	for i, v := range g.Titles{
+		g.TitleToID[v] = uint32(i)
+	}
+
 	//TODO вызов функции из binary.go, для преобразования в .bin
 
 

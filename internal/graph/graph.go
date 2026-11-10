@@ -3,7 +3,8 @@ package graph
 import "errors"
 
 type Graph struct {
-	Titles []string
+	Titles []string 
+	TitleToID map[string]uint32 
 
 	incoming [][]uint32
 	outgoing [][]uint32
@@ -23,4 +24,9 @@ func (g *Graph) InNeighbors(v uint32) ([]uint32, error) {
 		return nil, ErrGraphNotExist
 	}
 	return g.incoming[v], nil
+}
+
+
+func (g *Graph) size() int{
+	return len(g.Titles)
 }
