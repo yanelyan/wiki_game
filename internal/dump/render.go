@@ -7,14 +7,16 @@ import (
 	"io"
 	"os"
 
+	"github.com/yanelyan/wiki_game/internal/graph"
 	"github.com/yanelyan/wiki_game/internal/storage"
 )
 
-// LoadFromBin читает граф в формате WGR1, записанный storage.SaveToBin.
+// LoadFromBin читает файл storage.SaveToBin в формате WGR1
+// и возвращает graph.Graph, готовый для поиска пути.
 // Порядок полей: Titles, TitleToID, Incoming, Outgoing.
 // Длины имеют тип uint64, ID — uint32; все числа записаны в LittleEndian.
 // Пустые и nil-коллекции в файле не различаются.
-func LoadFromBin(path string) (*storage.DataGraph, error) {
+func LoadFromBin(path string) (*graph.Graph, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("открытие файла графа: %w", err)
@@ -77,7 +79,7 @@ func LoadFromBin(path string) (*storage.DataGraph, error) {
 	if d.r.N != 0 {
 		return nil, fmt.Errorf("лишние данные после графа: %d байт", d.r.N)
 	}
-	return g, nil
+	return graph.New(g.Titles, g.TitleToID, g.Incoming, g.Outgoing), nil
 }
 
 type binDecoder struct {

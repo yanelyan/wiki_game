@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/yanelyan/wiki_game/internal/graph"
 	"github.com/yanelyan/wiki_game/internal/storage"
 )
 
@@ -26,7 +27,7 @@ func TestLoadFromBinRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(got, want) {
+	if !reflect.DeepEqual(got, graph.New(want.Titles, want.TitleToID, want.Incoming, want.Outgoing)) {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}
 }
@@ -53,7 +54,7 @@ func TestLoadFromBinFixture(t *testing.T) {
 		Titles: []string{"Я"}, TitleToID: map[string]uint32{"Я": 0x12345678},
 		Incoming: [][]uint32{{}}, Outgoing: [][]uint32{{0x12345678}},
 	}
-	if !reflect.DeepEqual(got, want) {
+	if !reflect.DeepEqual(got, graph.New(want.Titles, want.TitleToID, want.Incoming, want.Outgoing)) {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}
 
@@ -97,7 +98,7 @@ func TestLoadFromBinEmptyGraph(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(g.Titles)+len(g.TitleToID)+len(g.Incoming)+len(g.Outgoing) != 0 {
+	if !reflect.DeepEqual(g, graph.New([]string{}, map[string]uint32{}, [][]uint32{}, [][]uint32{})) {
 		t.Fatalf("expected an empty graph, got %+v", g)
 	}
 }
@@ -105,5 +106,48 @@ func TestLoadFromBinEmptyGraph(t *testing.T) {
 func TestLoadFromBinMissingFile(t *testing.T) {
 	if g, err := LoadFromBin(filepath.Join(t.TempDir(), "missing.bin")); err == nil || g != nil {
 		t.Fatalf("expected an open error, got graph=%+v, error=%v", g, err)
+	}
+}
+
+func TestBuildAndLoadGraphFindPath(t *testing.T) {
+	// BuildTestGraph uses paths relative to the working directory.
+	dir := t.TempDir()
+	if err := os.Mkdir(filepath.Join(dir, "graphs"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	data := []byte(`{
+		"titles": ["Старт", "Мост", "Тупик", "Финиш"],
+		"incoming": [[], [0], [0], [1]],
+		"outgoing": [[1, 2], [3], [], []]
+	}`)
+	if err := os.WriteFile(filepath.Join(dir, "graphs", "test.json"), data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Error(err)
+		}
+	})
+	if err := storage.BuildTestGraph(); err != nil {
+		t.Fatal(err)
+	}
+	g, err := LoadFromBin("graphs/test.bin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Branching at the start forces FindPath to use both adjacency lists.
+	path, err := graph.FindPath(g, "Старт", "Финиш")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"Старт", "Мост", "Финиш"}; !reflect.DeepEqual(path, want) {
+		t.Fatalf("got path %v, want %v", path, want)
 	}
 }
