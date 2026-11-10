@@ -1,1 +1,2 @@
-/graphs/generated/
+/graphs/generated/*
+!/graphs/generated/.gitkeep
