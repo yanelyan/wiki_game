@@ -1,4 +1,4 @@
-package graph
+package graphs
 
 import "errors"
 
@@ -10,7 +10,7 @@ type Graph struct {
 	outgoing [][]uint32
 }
 
-var ErrGraphNotExist = errors.New("graph does not exist")
+var ErrGraphNotExist = errors.New("graphs does not exist")
 
 // New создаёт граф с входящими и исходящими связями.
 // Срезы и карта используются без копирования: после создания графа

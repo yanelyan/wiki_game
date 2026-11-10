@@ -23,7 +23,7 @@ func BuildTestGraph() error {
 		g.TitleToID[v] = uint32(i)
 	}
 
-	err = SaveToBin("graphs/test.bin", &g)
+	err = SaveToBin("graphs/generated/test.bin", &g)
 	if err != nil {
 		return fmt.Errorf("ошибка сохранения в bin файл %w", err)
 	}

@@ -1,11 +1,9 @@
-package graph
+package graphs
 
 import (
 	"fmt"
 	"slices"
-	
 )
-
 
 func FindPath(graph *Graph, start, end string) ([]string, error) {
 	if graph == nil {
@@ -13,11 +11,11 @@ func FindPath(graph *Graph, start, end string) ([]string, error) {
 	}
 
 	startID, ok := graph.TitleToID[start]
-	if !ok{
+	if !ok {
 		return nil, fmt.Errorf("статья %q не найдена", start)
 	}
 	endID, ok := graph.TitleToID[end]
-	if !ok{
+	if !ok {
 		return nil, fmt.Errorf("статья %q не найдена", end)
 	}
 	visitedFromStart := make([]bool, graph.size())
